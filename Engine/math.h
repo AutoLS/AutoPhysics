@@ -244,6 +244,79 @@ inline Vector4 V4(Vector3 a, float w = 0)
 	return result;
 }
 
+//NOTE: Below are matrix and quaternion implementations
+//		Matrix is in row major
+
+union Mat3
+{
+	struct 
+	{
+		float E[3][3];
+	};
+	struct 
+	{
+		float m[9];
+	};
+	struct
+	{
+		Vector3 x;
+		Vector3 y;
+		Vector3 z;
+	};
+};
+
+Mat3 mat3_identity()
+{
+	Mat3 result = {};
+	for(int r = 0; r < 3; ++r)
+	{
+		result.E[r][r] = 1;
+	}
+	
+	return result;
+}
+
+Mat3 operator*(Mat3 A, Mat3 B)
+{
+	Mat4 Result = {};
+	for(int r = 0; r < 3; ++r)
+	{
+		for(int c = 0; c < 3; ++c)
+		{
+			Result.E[r][c] = A.E[r][0] * B.E[0][c] +
+							 A.E[r][1] * B.E[1][c] +
+							 A.E[r][2] * B.E[2][c];
+		}
+	}
+	return Result;
+}
+
+Vector3 operator*(Mat3 &A, Vector3 B)
+{
+	Vector3 Result = {};
+	float* PtrResult = &Result.x;
+	for(int i = 0; i < 3; ++i)
+	{
+		*(PtrResult + i) = A.E[i][0] * B.x +
+						   A.E[i][1] * B.y +
+						   A.E[i][2] * B.z;
+	}
+	return Result;
+}
+
+Vector3 operator*(Vector3 B, Mat3 &A)
+{
+	Vector3 Result = {};
+	float* PtrResult = &Result.x;
+	for(int i = 0; i < 3; ++i)
+	{
+		*(PtrResult + i) = A.E[i][0] * B.x +
+						   A.E[i][1] * B.y +
+						   A.E[i][2] * B.z;
+	}
+	return Result;
+}
+
 union Mat4
 {
 	struct
@@ -385,5 +458,18 @@ Mat4 mat4_ortho(float Left, float Right,
 	
 	return Result;
 }
+
+struct Quaternion 
+{
+	union 
+	{
+		struct
+		{
+			float x, y, z;
+		};
+		Vector3 xyz;
+	};
+	float w;
+};
 
 #endif
