@@ -278,43 +278,43 @@ Mat3 mat3_identity()
 
 Mat3 operator*(Mat3 A, Mat3 B)
 {
-	Mat4 Result = {};
+	Mat3 result = {};
 	for(int r = 0; r < 3; ++r)
 	{
 		for(int c = 0; c < 3; ++c)
 		{
-			Result.E[r][c] = A.E[r][0] * B.E[0][c] +
+			result.E[r][c] = A.E[r][0] * B.E[0][c] +
 							 A.E[r][1] * B.E[1][c] +
 							 A.E[r][2] * B.E[2][c];
 		}
 	}
-	return Result;
+	return result;
 }
 
 Vector3 operator*(Mat3 &A, Vector3 B)
 {
-	Vector3 Result = {};
-	float* PtrResult = &Result.x;
+	Vector3 result = {};
+	float* ptr_result = &result.x;
 	for(int i = 0; i < 3; ++i)
 	{
-		*(PtrResult + i) = A.E[i][0] * B.x +
+		*(ptr_result + i) = A.E[i][0] * B.x +
 						   A.E[i][1] * B.y +
 						   A.E[i][2] * B.z;
 	}
-	return Result;
+	return result;
 }
 
 Vector3 operator*(Vector3 B, Mat3 &A)
 {
-	Vector3 Result = {};
-	float* PtrResult = &Result.x;
+	Vector3 result = {};
+	float* ptr_result = &result.x;
 	for(int i = 0; i < 3; ++i)
 	{
-		*(PtrResult + i) = A.E[i][0] * B.x +
+		*(ptr_result + i) = A.E[i][0] * B.x +
 						   A.E[i][1] * B.y +
 						   A.E[i][2] * B.z;
 	}
-	return Result;
+	return result;
 }
 
 union Mat4
@@ -469,7 +469,53 @@ struct Quaternion
 		};
 		Vector3 xyz;
 	};
-	float w;
+	float w = 1.0f;
 };
+
+Quaternion make_quaternion(Vector3 v, float w)
+{
+	Quaternion q = {v.x, v.y, v.z, w};
+	return q;
+}
+
+Quaternion make_quaternion(float x, float y, float z, float w)
+{
+	Quaternion q = {x, y, z, w};
+	return q;
+}
+
+Quaternion operator+(Quaternion q1, Quaternion q2)
+{
+	Quaternion q = {q1.x + q2.x, q1.y + q2.y, q1.z + q2.z, q1.w + q2.w};
+	return q;
+} 
+
+float dot(Quaternion a, Quaternion b)
+{
+	return (a.x * b.x) + (a.y * b.y) + (a.z * b.z) + (a.w * b.w);
+}
+
+Quaternion normalize(Quaternion q)
+{
+	Quaternion result = q;
+	float magnitude = sqrt(dot(q, q));
+	if(magnitude > 0)
+	{
+		float t = 1.0f / magnitude;
+		result.x *= t;
+		result.y *= t;
+		result.z *= t;
+		result.w *= t;
+	}
+	else
+	{
+		result.x = 0;
+		result.y = 0;
+		result.z = 0;
+		result.w = 1;
+	}
+
+	return result;
+}
 
 #endif
