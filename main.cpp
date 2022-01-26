@@ -27,6 +27,17 @@ int wmain()
     {
         gl_clear(V4(0, 0, 0, 1));
 
+        float new_time = get_current_time_in_seconds();
+		float frame_time = new_time - physics_current_time;
+		physics_current_time = new_time;
+
+		physics_time_accumlator += frame_time;
+
+        while(physics_time_accumlator >= physics_dt)
+        {
+            physics_time_accumlator -= physics_dt;
+        }
+
         lock_fps(get_refresh_rate());
 
         Mat4 projection = mat4_ortho(0, 1280, 0, 720, -1, 1);
