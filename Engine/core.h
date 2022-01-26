@@ -32,7 +32,7 @@ typedef int64_t s64;
 #include "dirent.h"
 
 #include "math.h"
-#include "Physics/physics.h"
+#include "Physics/physics.cpp"
 
 #include "util.h"
 #include "time.h"
