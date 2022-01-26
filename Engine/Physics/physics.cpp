@@ -42,3 +42,46 @@ void integrate_for_position(RigidBody* body, float dt)
 
     body->orientation = normalize(body->orientation);
 }
+
+void apply_impulse(DistanceConstraint* c, float dt)
+{
+    RigidBody* body_a = c->body_a;
+    RigidBody* body_b = c->body_b;
+
+    Vector3 r1 = to_mat3(body_a->orientation) * c->rel_pos_a;
+    Vector3 r2 = to_mat3(body_b->orientation) * c->rel_pos_b;
+
+    Vector3 global_a = r1 + body_a->position;
+    Vector3 global_b = r2 + body_b->position;
+
+    Vector3 ab = global_b - global_a;
+    Vector3 abn = normalize(ab);
+
+    Vector3 vel_a = body_a->velocity + cross(body_a->velocity, r1);
+    Vector3 vel_b = body_b->velocity + cross(body_b->velocity, r2);
+
+    float rel_vel = dot(vel_a - vel_b, abn); 
+
+    float inverse_constraint_mass = body_a->inverse_mass + body_b->inverse_mass;
+    float inverse_constraint_inertia = dot(abn, 
+    cross(body_a->inverse_inertia * cross(r1, abn), r1) + 
+    cross(body_b->inverse_inertia * cross(r2, abn), r2));
+
+    float constraint_mass = inverse_constraint_mass + inverse_constraint_inertia;
+
+    if(constraint_mass > 0)
+    {
+        float b = 0.0f;
+        float distance_offset = length(ab) - c->target_length;
+        float baumgarte_scalar = 0.1f;
+        b = -(baumgarte_scalar / dt) * distance_offset;
+
+        float jn = -(rel_vel + b) / constraint_mass;
+
+        body_a->velocity += abn * (body_a->inverse_mass * jn);
+        body_b->velocity += abn * (body_b->inverse_mass * jn);
+
+        body_a->angular_velocity += body_a->inverse_inertia * cross(r1, abn * jn);
+        body_b->angular_velocity += body_b->inverse_inertia * cross(r2, abn * jn);
+    }
+}
