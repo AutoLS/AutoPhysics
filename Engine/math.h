@@ -251,6 +251,12 @@ union Mat3
 {
 	struct 
 	{
+		float _11, _12, _13;
+		float _21, _22, _23;
+		float _31, _32, _33;
+	};
+	struct 
+	{
 		float E[3][3];
 	};
 	struct 
@@ -315,6 +321,25 @@ Vector3 operator*(Vector3 B, Mat3 &A)
 						   A.E[i][2] * B.z;
 	}
 	return result;
+}
+
+Mat3 transpose(Mat3 A)
+{
+	Mat3 m;
+
+	m._11 = A._11;
+	m._21 = A._12;
+	m._31 = A._13;
+
+	m._12 = A._21;
+	m._22 = A._22;
+	m._32 = A._23;
+
+	m._13 = A._31;
+	m._23 = A._32;
+	m._33 = A._33;
+
+	return m;
 }
 
 union Mat4
@@ -516,6 +541,35 @@ Quaternion normalize(Quaternion q)
 	}
 
 	return result;
+}
+
+Mat3 to_mat3(Quaternion q)
+{
+	Mat3 mat = mat3_identity();
+
+	float yy = q.y*q.y;
+	float zz = q.z*q.z;
+	float xy = q.x*q.y;
+	float zw = q.z*q.w;
+	float xz = q.x*q.z;
+	float yw = q.y*q.w;
+	float xx = q.x*q.x;
+	float yz = q.y*q.z;
+	float xw = q.x*q.w;
+
+	mat._11 = 1.0f - 2.0f * (yy + zz);
+	mat._12 = 2.0f * (xy + zw);
+	mat._13 = 2.0f * (xz - yw);
+
+	mat._21 = 2.0f * (xy - zw);
+	mat._22 = 1.0f - 2.0f * (xx + zz);
+	mat._23 = 2.0f * (yz + xw);
+
+	mat._31 = 2.0f * (xz + yw);
+	mat._32 = 2.0f * (yz - xw);
+	mat._33 = 1.0f - 2.0f * (xx + yy);
+
+	return mat;
 }
 
 #endif
