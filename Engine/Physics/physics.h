@@ -25,6 +25,8 @@ struct RigidBody
 
     float restitution;
     float friction; 
+
+    bool freeze_orientation;
 };
 
 #include "constraints.h"
