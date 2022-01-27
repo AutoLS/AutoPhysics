@@ -6,7 +6,7 @@ RigidBody create_body(Vector3 p, Vector3 v, float mass)
     body.position = p;
     body.velocity = v;
     body.inverse_mass = 1.0f / mass;
-    body.inverse_inertia = mat3_identity();
+    body.inverse_inertia = {};
 
     return body;
 }
@@ -25,25 +25,32 @@ void integrate_for_velocity(RigidBody* body, float dt)
 {
     if(body->inverse_mass > 0)
     {
-        body->velocity += physics_gravity * dt;
+        //body->velocity += physics_gravity * dt;
     }
 
     body->velocity += body->force * body->inverse_mass * dt;
     body->velocity = body->velocity * physics_damping_factor;
 
-    body->angular_velocity += body->inverse_inertia * body->torgue * dt;
-    body->angular_velocity = body->angular_velocity * physics_damping_factor;
+    if(!body->freeze_orientation)
+    {
+        body->angular_velocity += body->inverse_inertia * body->torgue * dt;
+        body->angular_velocity = body->angular_velocity * physics_damping_factor;
+    }
 }
 
 void integrate_for_position(RigidBody* body, float dt)
 {
     body->position += body->velocity * dt;
-    body->orientation = body->orientation + make_quaternion(body->angular_velocity * dt * 0.5f, 0.0f);
+    
+    if(!body->freeze_orientation)
+    {
+        body->orientation = body->orientation + make_quaternion(body->angular_velocity * dt * 0.5f, 0.0f);
 
-    body->orientation = normalize(body->orientation);
+        body->orientation = normalize(body->orientation);
+    }
 }
 
-void apply_impulse(DistanceConstraint* c, float dt)
+void solve_distance_constraint(DistanceConstraint* c, float dt)
 {
     RigidBody* body_a = c->body_a;
     RigidBody* body_b = c->body_b;
@@ -55,17 +62,17 @@ void apply_impulse(DistanceConstraint* c, float dt)
     Vector3 global_b = r2 + body_b->position;
 
     Vector3 ab = global_b - global_a;
-    Vector3 abn = normalize(ab);
+    Vector3 n = normalize(ab);
 
-    Vector3 vel_a = body_a->velocity + cross(body_a->velocity, r1);
-    Vector3 vel_b = body_b->velocity + cross(body_b->velocity, r2);
+    Vector3 vel_a = body_a->velocity + cross(body_a->angular_velocity, r1);
+    Vector3 vel_b = body_b->velocity + cross(body_b->angular_velocity, r2);
 
-    float rel_vel = dot(vel_a - vel_b, abn); 
+    float rel_vel = dot(vel_a - vel_b, n); 
 
     float inverse_constraint_mass = body_a->inverse_mass + body_b->inverse_mass;
-    float inverse_constraint_inertia = dot(abn, 
-    cross(body_a->inverse_inertia * cross(r1, abn), r1) + 
-    cross(body_b->inverse_inertia * cross(r2, abn), r2));
+    float inverse_constraint_inertia = dot(n, 
+    cross(body_a->inverse_inertia * cross(r1, n), r1) + 
+    cross(body_b->inverse_inertia * cross(r2, n), r2));
 
     float constraint_mass = inverse_constraint_mass + inverse_constraint_inertia;
 
@@ -78,10 +85,12 @@ void apply_impulse(DistanceConstraint* c, float dt)
 
         float jn = -(rel_vel + b) / constraint_mass;
 
-        body_a->velocity += abn * (body_a->inverse_mass * jn);
-        body_b->velocity += abn * (body_b->inverse_mass * jn);
-
-        body_a->angular_velocity += body_a->inverse_inertia * cross(r1, abn * jn);
-        body_b->angular_velocity += body_b->inverse_inertia * cross(r2, abn * jn);
+        body_a->velocity += n * (body_a->inverse_mass * jn);
+        body_b->velocity -= n * (body_b->inverse_mass * jn);
+        
+        if(!body_a->freeze_orientation)
+            body_a->angular_velocity += body_a->inverse_inertia * cross(r1, n * jn);
+        if(!body_b->freeze_orientation)
+            body_b->angular_velocity += body_b->inverse_inertia * cross(r2, n * jn);
     }
 }
