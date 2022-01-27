@@ -14,7 +14,7 @@ struct DistanceConstraint
     Vector3 rel_pos_b;
 };
 
-DistanceConstraint make_distance_constraint(RigidBody* body_a, RigidBody* body_b, Vector3 global_a, Vector3 global_b)
+DistanceConstraint set_distance_constraint(RigidBody* body_a, RigidBody* body_b, Vector3 global_a, Vector3 global_b)
 {
     DistanceConstraint c = {};
     c.body_a = body_a;
