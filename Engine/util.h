@@ -32,4 +32,9 @@ Vector4 rec_str_to_vec4(std::vector<std::string> rect_data, float width, float h
     return result;
 }
 
+void print_vec3(Vector3 a, char* debug_name = 0)
+{
+    printf("%s: (%.1f, %.1f, %.1f)\n", debug_name, a.x, a.y, a.z);
+}
+
 #endif 
