@@ -32,9 +32,9 @@ typedef int64_t s64;
 #include "dirent.h"
 
 #include "math.h"
+#include "util.h"
 #include "Physics/physics.cpp"
 
-#include "util.h"
 #include "time.h"
 #include "graphics.h"
 #include "input.h"
