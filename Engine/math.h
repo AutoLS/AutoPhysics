@@ -282,45 +282,61 @@ Mat3 mat3_identity()
 	return result;
 }
 
-Mat3 operator*(Mat3 A, Mat3 B)
+Mat3 operator*(Mat3 a, Mat3 b)
 {
-	Mat3 result = {};
-	for(int r = 0; r < 3; ++r)
-	{
-		for(int c = 0; c < 3; ++c)
-		{
-			result.E[r][c] = A.E[r][0] * B.E[0][c] +
-							 A.E[r][1] * B.E[1][c] +
-							 A.E[r][2] * B.E[2][c];
-		}
-	}
-	return result;
+	Mat3 out;
+
+	out._11 = a._11 * b._11 + a._12 * b._21 + a._13 * b._31;
+	out._12 = a._11 * b._12 + a._12 * b._22 + a._13 * b._32;
+	out._13 = a._11 * b._13 + a._12 * b._23 + a._13 * b._33;
+
+	out._21 = a._21 * b._11 + a._22 * b._21 + a._23 * b._31;
+	out._22 = a._21 * b._12 + a._22 * b._22 + a._23 * b._32;
+	out._23 = a._21 * b._13 + a._22 * b._23 + a._23 * b._33;
+
+	out._31 = a._31 * b._11 + a._32 * b._21 + a._33 * b._31;
+	out._32 = a._31 * b._12 + a._32 * b._22 + a._33 * b._32;
+	out._33 = a._31 * b._13 + a._32 * b._23 + a._33 * b._33;
+
+	return out;
 }
 
-Vector3 operator*(Mat3 &A, Vector3 B)
+Vector3 operator*(Mat3& a, Vector3 b)
 {
-	Vector3 result = {};
-	float* ptr_result = &result.x;
-	for(int i = 0; i < 3; ++i)
-	{
-		*(ptr_result + i) = A.E[i][0] * B.x +
-						   A.E[i][1] * B.y +
-						   A.E[i][2] * B.z;
-	}
-	return result;
+	Vector3 out;
+
+	out.x = a._11 * b.x
+		+ a._21 * b.y
+		+ a._31 * b.z;
+
+	out.y = a._12 * b.x
+		+ a._22 * b.y
+		+ a._32 * b.z;
+
+	out.z = a._13 * b.x
+		+ a._23 * b.y
+		+ a._33 * b.z;
+
+	return out;
 }
 
-Vector3 operator*(Vector3 B, Mat3 &A)
+Vector3 operator*(Vector3 b, Mat3& a)
 {
-	Vector3 result = {};
-	float* ptr_result = &result.x;
-	for(int i = 0; i < 3; ++i)
-	{
-		*(ptr_result + i) = A.E[i][0] * B.x +
-						   A.E[i][1] * B.y +
-						   A.E[i][2] * B.z;
-	}
-	return result;
+	Vector3 out;
+
+	out.x = a._11 * b.x
+		+ a._21 * b.y
+		+ a._31 * b.z;
+
+	out.y = a._12 * b.x
+		+ a._22 * b.y
+		+ a._32 * b.z;
+
+	out.z = a._13 * b.x
+		+ a._23 * b.y
+		+ a._33 * b.z;
+
+	return out;
 }
 
 Mat3 transpose(Mat3 A)
@@ -568,6 +584,35 @@ Mat3 to_mat3(Quaternion q)
 	mat._31 = 2.0f * (xz + yw);
 	mat._32 = 2.0f * (yz - xw);
 	mat._33 = 1.0f - 2.0f * (xx + yy);
+
+	return mat;
+}
+
+Mat4 to_mat4(Quaternion q)
+{
+	Mat4 mat = mat4_identity();
+
+	float yy = q.y*q.y;
+	float zz = q.z*q.z;
+	float xy = q.x*q.y;
+	float zw = q.z*q.w;
+	float xz = q.x*q.z;
+	float yw = q.y*q.w;
+	float xx = q.x*q.x;
+	float yz = q.y*q.z;
+	float xw = q.x*q.w;
+
+	mat.m[0] = 1.0f - 2.0f * (yy + zz);
+	mat.m[1] = 2.0f * (xy + zw);
+	mat.m[2] = 2.0f * (xz - yw);
+
+	mat.m[4] = 2.0f * (xy - zw);
+	mat.m[5] = 1.0f - 2.0f * (xx + zz);
+	mat.m[6] = 2.0f * (yz + xw);
+
+	mat.m[8] = 2.0f * (xz + yw);
+	mat.m[9] = 2.0f * (yz - xw);
+	mat.m[10] = 1.0f - 2.0f * (xx + yy);
 
 	return mat;
 }
