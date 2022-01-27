@@ -248,6 +248,51 @@ bool load_texture(const char* path, TextureData* texture, bool flip = false)
     return true;
 }
 
+void gl_draw(u32 shader, ShapeDataGL& shape, u32 texture, bool blend, Vector3 pos, Vector3 dim, Quaternion orientation, Vector4 color = {1, 1, 1, 1})
+{
+    glUseProgram(shader);
+    gl_set_vec4(shader, "Color", color);
+
+    Mat4 transform = mat4_identity();
+    transform = mat4_scale(transform, dim);
+    transform = transform * to_mat4(orientation);
+    transform = mat4_translate(transform, pos);
+
+    gl_set_mat4(shader, "Transform", transform);
+
+    if(blend)
+    {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    if(glIsTexture(texture) == GL_TRUE)
+    {
+        gl_set_int(shader, "Texture", 0);
+        gl_set_int(shader, "IsTexture", 1);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+    }
+    else
+    {
+        gl_set_int(shader, "IsTexture", 0);
+    }
+
+    glBindVertexArray(shape.vao);
+    if(shape.indices)
+    {
+        glDrawElements(GL_TRIANGLES, shape.n_indices, GL_UNSIGNED_INT, 0);
+    }
+    else
+    {
+        glDrawArrays(GL_TRIANGLES, 0, shape.n_verticies);
+    }
+
+    glDisable(GL_BLEND);
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
+
 void gl_draw(u32 shader, ShapeDataGL& shape, u32 texture, bool blend, Vector3 pos, Vector3 dim, Vector4 color = {1, 1, 1, 1}, float theta = 0, Vector3 axis = {0, 0, 1})
 {
     glUseProgram(shader);
