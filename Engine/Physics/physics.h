@@ -2,16 +2,19 @@
 #define PHYSICS_H
 
 #include "../math.h"
+#include "../shape.h"
 
 static float physics_current_time = 0.0f;
 static float physics_time_accumlator = 0;
 static float physics_dt = 1.0f / 60.0f;
 
-static Vector3 physics_gravity = {0, -9.8f, 0};
+static Vector3 physics_gravity = {0, -98, 0};
 static float physics_damping_factor = 0.95f;
 
 struct RigidBody
 {
+    Shape shape;
+
     Vector3 position;
     Vector3 velocity;
     Vector3 force;
@@ -31,7 +34,7 @@ struct RigidBody
 
 #include "constraints.h"
 
-RigidBody create_body(Vector3 p, Vector3 v, float mass);
+RigidBody create_body(Shape shape, Vector3 p, Vector3 v, float mass);
 
 void set_gravity(Vector3 g);
 void set_damping_factor(float k);

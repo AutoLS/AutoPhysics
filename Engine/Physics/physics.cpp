@@ -1,12 +1,14 @@
 #include "physics.h"
 
-RigidBody create_body(Vector3 p, Vector3 v, float mass)
+RigidBody create_body(Shape shape, Vector3 p, Vector3 v, float mass)
 {
     RigidBody body = {};
     body.position = p;
     body.velocity = v;
-    body.inverse_mass = 1.0f / mass;
+    body.inverse_mass = mass > 0 ? 1.0f / mass : 0;
     body.inverse_inertia = {};
+    body.shape = shape;
+    update_shape(&body.shape, p, body.orientation);
 
     return body;
 }
@@ -48,6 +50,8 @@ void integrate_for_position(RigidBody* body, float dt)
 
         body->orientation = normalize(body->orientation);
     }
+
+    update_shape(&body->shape, body->position, body->orientation);
 }
 
 void solve_distance_constraint(DistanceConstraint* c, float dt)
