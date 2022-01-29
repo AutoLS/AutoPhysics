@@ -1,4 +1,4 @@
 # AutoPhysics
 
-Physics engine written from scratch. 
+Simple physics engine from scratch. 
 This project is still in active development.
