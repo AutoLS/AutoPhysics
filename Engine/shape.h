@@ -69,7 +69,7 @@ struct Manifold
     int index_a;
     int index_b;
 
-    std::vector<Contact> contacts;
+    std::vector<Vector3> cp;
 };
 
 struct Edge
@@ -86,9 +86,10 @@ struct ClippingEdge
     Vector3 edge;
     Vector3 v1;
     Vector3 v2;
+    Vector3 max;
 };
 
-Shape create_shape(ShapeType type = ShapeType::RECTANGLE, Vector3* vertices = 0);
+Shape create_shape(Vector3 dim, ShapeType type = ShapeType::RECTANGLE, Vector3* vertices = 0);
 
 void reset_shape_vertices(Shape* shape);
 void update_shape(Shape* shape, Vector3 pos, Vector3 dim, Vector3 axis = {}, float angle = 0);
@@ -138,7 +139,7 @@ Vector3 get_furthest_point_in_direction(Shape* shape, Vector3 dir)
     return shape->global_vertices[index];
 }
 
-int get_furthest_point_in_direction(Shape* shape, Vector3 dir)
+int get_furthest_point_index_in_direction(Shape* shape, Vector3 dir)
 {
     float max = -FLT_MAX;
     u32 index = 0;
@@ -161,10 +162,11 @@ float get_shape_radius(Shape* shape)
     return length(get_furthest_vertex(shape) - shape->center_pos);
 }
 
-Shape create_shape(ShapeType type, Vector3* vertices)
+Shape create_shape(Vector3 dim, ShapeType type, Vector3* vertices)
 {
     Shape shape = {};
     shape.type = type;
+    shape.dim = dim;
 
     switch(shape.type)
     {
@@ -274,6 +276,24 @@ void update_shape(Shape* shape, Vector3 pos, Vector3 dim, Vector3 axis, float an
     shape->radius = get_shape_radius(shape);
     shape->center_pos = pos;
     shape->dim = dim;
+}
+
+void update_shape(Shape* shape, Vector3 pos, Quaternion q)
+{
+    if(shape->vertices_count)
+    {
+        Mat4 transform = mat4_identity();
+        transform = mat4_scale(transform, shape->dim);
+        transform = transform * to_mat4(q);
+        transform = mat4_translate(transform, pos);
+
+        for(int i = 0; i < shape->vertices_count; ++i)
+        {
+            Vector4 vertex = V4(shape->local_vertices[i], 1);
+            vertex = transform * vertex;
+            shape->global_vertices[i] = {vertex.x, vertex.y, vertex.z};
+        }
+    }
 }
 
 SimplexPoint support_point(Shape* shape_a, Shape* shape_b, Vector3 dir)
@@ -513,9 +533,11 @@ float get_overlap_from_projection(Vector2 a, Vector2 b)
 ClippingEdge find_best_edge(Shape* shape, Vector3 n)
 {
     ClippingEdge result = {};
-    int index = get_furthest_point_in_direction(shape, normal);
+    int index = get_furthest_point_index_in_direction(shape, n);
     int index_left = index - 1 < 0 ? shape->vertices_count-1 : index - 1;
     int index_right = index + 1 == shape->vertices_count ? 0 : index + 1;
+
+    result.max = shape->global_vertices[index];
 
     Vector3 v = shape->global_vertices[index]; 
     Vector3 v_left = shape->global_vertices[index_left]; 
@@ -529,35 +551,84 @@ ClippingEdge find_best_edge(Shape* shape, Vector3 n)
         result.edge = r;
         result.v1 = v;
         result.v2 = v_right;
-        return r;
+        return result;
     }
     else
     {
         result.edge = l;
         result.v1 = v_left;
         result.v2 = v;
-        return l;
+        return result;
     }
 }
 
-Contact generate_contact_by_clipping(Shape* shape_a, Shape* shape_b, Vector3 normal)
+std::vector<Vector3> clip(Vector3 v1, Vector3 v2, Vector3 n, float o)
 {
-    ClippingEdge e1 = find_best_edge(shape_a, normal);
-    ClippingEdge e2 = find_best_edge(shape_b, -normal);
+    std::vector<Vector3> cp;
+    float d1 = dot(n, v1) - o;
+    float d2 = dot(n, v2) - o;
+
+    if(d1 >= 0) cp.push_back(v1);
+    if(d2 >= 0) cp.push_back(v2);
+
+    if(d1 * d2 < 0)
+    {
+        Vector3 e = v2 - v1;
+        float u = d1 / (d1 - d2);
+        e = e * u;
+        e += v1;
+
+        cp.push_back(e);
+    }
+
+    return cp;
+}
+
+std::vector<Vector3> generate_contacts(Shape* shape_a, Shape* shape_b, Vector3 normal)
+{
+    std::vector<Vector3> cp;
+    ClippingEdge e1 = find_best_edge(shape_a, -normal);
+    ClippingEdge e2 = find_best_edge(shape_b, normal);
     
     ClippingEdge ref, inc;
     bool flip = false;
     if(abs(dot(e1.edge, normal)) <= abs(dot(e2.edge, normal)))
     {
-        ref = e1;
-        inc = e2;
+        ref = e2;
+        inc = e1;
     }
     else
     {
-        ref = e2;
-        inc = e1;
+        ref = e1;
+        inc = e2;
         flip = true;
     }
+
+    Vector3 refv = normalize(e1.edge);
+
+    float o1 = dot(refv, ref.v1);
+    cp = clip(inc.v1, inc.v2, refv, o1);
+    if(cp.size() < 2) return {};
+
+    float o2 = dot(refv, ref.v2);
+    cp = clip(cp[0], cp[1], -refv, -o2);
+    if(cp.size() < 2) return {};
+
+    Vector3 ref_n = V3(perp(ref.edge.xy));
+    if(flip) ref_n = -ref_n;
+
+    float max = dot(ref_n, ref.max);
+
+    if(dot(ref_n, cp[1]) - max < 0)
+    {
+        cp.erase(cp.begin() + 1);
+    }
+    if(dot(ref_n, cp[0]) - max < 0)
+    {
+        cp.erase(cp.begin());
+    }
+
+    return cp;
 }
 
 bool test_SAT(Shape* shape_a, Shape* shape_b, Manifold* manifold) 
@@ -611,6 +682,7 @@ bool test_SAT(Shape* shape_a, Shape* shape_b, Manifold* manifold)
     manifold->normal = smallest;
     manifold->depth = overlap;
     manifold->mtv = smallest * overlap;
+    manifold->cp = generate_contacts(shape_a, shape_b, manifold->normal);
 
     return true;
 }
