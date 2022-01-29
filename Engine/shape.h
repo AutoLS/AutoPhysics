@@ -549,8 +549,8 @@ ClippingEdge find_best_edge(Shape* shape, Vector3 n)
     if(dot(r, n) <= dot(l, n))
     {
         result.edge = r;
-        result.v1 = v;
-        result.v2 = v_right;
+        result.v1 = v_right;
+        result.v2 = v;
         return result;
     }
     else
@@ -594,17 +594,17 @@ std::vector<Vector3> generate_contacts(Shape* shape_a, Shape* shape_b, Vector3 n
     bool flip = false;
     if(abs(dot(e1.edge, normal)) <= abs(dot(e2.edge, normal)))
     {
-        ref = e2;
-        inc = e1;
+        ref = e1;
+        inc = e2;
     }
     else
     {
-        ref = e1;
-        inc = e2;
+        ref = e2;
+        inc = e1;
         flip = true;
     }
 
-    Vector3 refv = normalize(e1.edge);
+    Vector3 refv = normalize(ref.edge);
 
     float o1 = dot(refv, ref.v1);
     cp = clip(inc.v1, inc.v2, refv, o1);
@@ -614,16 +614,18 @@ std::vector<Vector3> generate_contacts(Shape* shape_a, Shape* shape_b, Vector3 n
     cp = clip(cp[0], cp[1], -refv, -o2);
     if(cp.size() < 2) return {};
 
-    Vector3 ref_n = V3(perp(ref.edge.xy));
+    Vector3 ref_n = cross(ref.edge, V3(-1, 0, 0));
     if(flip) ref_n = -ref_n;
 
     float max = dot(ref_n, ref.max);
+    float d0 = dot(ref_n, cp[0]);
+    float d1 = dot(ref_n, cp[1]);
 
-    if(dot(ref_n, cp[1]) - max < 0)
+    if(d1 - max < 0)
     {
         cp.erase(cp.begin() + 1);
     }
-    if(dot(ref_n, cp[0]) - max < 0)
+    if(d0 - max < 0)
     {
         cp.erase(cp.begin());
     }
