@@ -23,10 +23,11 @@ int wmain()
 	u32 basic_renderer = gl_create_shader(gl_load_shader_source("shaders/basic_vert.glsl"),
 										  gl_load_shader_source("shaders/basic_frag.glsl"));
 
-	RigidBody player = create_body({100, 100}, {}, 5);
-	RigidBody box = create_body({200, 200}, {}, 3);
+	RigidBody player = create_body(create_shape({100, 100}), {100, 200}, {}, 5);
+	RigidBody box = create_body(create_shape({50, 50}), {200, 300}, {}, 3);
+	RigidBody wall = create_body(create_shape({1000, 100}), {640, 25}, {}, 0);
 
-	DistanceConstraint simple_constraint = make_distance_constraint(&player, &box, player.position + V3(50, 0), box.position + V3(-25, 0));
+	DistanceConstraint simple_constraint = set_distance_constraint(&player, &box, player.position + V3(50, 0), box.position + V3(-25, 0));
 
     while(handle_events())
     {
@@ -40,6 +41,16 @@ int wmain()
 
         while(physics_time_accumlator >= physics_dt)
         {
+			Manifold m = {};
+			if(test_SAT(&player.shape, &wall.shape, &m))
+			{
+				printf("collided! n_contacts: %d\n", (int)m.cp.size());
+				for(int i = 0; i < m.cp.size(); ++i)
+				{
+					print_vec3(m.cp[i], "CP");
+				}
+			}
+
 			integrate_for_velocity(&player, physics_dt);
 			integrate_for_velocity(&box, physics_dt);
 
@@ -71,7 +82,7 @@ int wmain()
 			force += {0, -1};
 		}
 
-		player.force = normalize(force) * weight;
+		player.force += normalize(force) * weight;
 
         lock_fps(get_refresh_rate());
 
@@ -79,8 +90,9 @@ int wmain()
 		gl_set_mat4(basic_renderer, "Projection", projection);
 		gl_set_mat4(basic_renderer, "View", mat4_identity());
 
-        gl_draw(basic_renderer, rect_shape_data, 0, true, player.position, V3(100, 100), player.orientation);
-        gl_draw(basic_renderer, rect_shape_data, 0, true, box.position, V3(50, 50), box.orientation, V4(1, 0, 0, 1));
+        gl_draw(basic_renderer, rect_shape_data, 0, true, player.position, player.shape.dim, player.orientation);
+        gl_draw(basic_renderer, rect_shape_data, 0, true, box.position, box.shape.dim, box.orientation, V4(1, 0, 0, 1));
+		gl_draw(basic_renderer, rect_shape_data, 0, true, wall.position, wall.shape.dim, wall.orientation, V4(0, 0, 1, 1));
 
         SDL_GL_SwapWindow(app_core.graphics.window);
         update_clock(&app_core.clock);
