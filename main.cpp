@@ -23,9 +23,9 @@ int wmain()
 	u32 basic_renderer = gl_create_shader(gl_load_shader_source("shaders/basic_vert.glsl"),
 										  gl_load_shader_source("shaders/basic_frag.glsl"));
 
-	RigidBody player = create_body(create_shape({100, 100}), {100, 200}, {}, 5);
-	RigidBody box = create_body(create_shape({50, 50}), {200, 300}, {}, 3);
-	RigidBody wall = create_body(create_shape({1000, 100}), {640, 25}, {}, 0);
+	RigidBody player = create_body(create_shape({100, 100}), {100, 300}, {}, 5);
+	RigidBody box = create_body(create_shape({50, 50}), {200, 400}, {}, 3);
+	RigidBody wall = create_body(create_shape({1000, 100}), {640, 200}, {}, 0);
 
 	DistanceConstraint simple_constraint = set_distance_constraint(&player, &box, player.position + V3(50, 0), box.position + V3(-25, 0));
 
@@ -38,13 +38,13 @@ int wmain()
 		physics_current_time = new_time;
 
 		physics_time_accumlator += frame_time;
-
+		Manifold m = {};
         while(physics_time_accumlator >= physics_dt)
-        {
-			Manifold m = {};
+        {	
 			if(test_SAT(&player.shape, &wall.shape, &m))
 			{
 				printf("collided! n_contacts: %d\n", (int)m.cp.size());
+				print_vec3(m.normal, "Normal");
 				for(int i = 0; i < m.cp.size(); ++i)
 				{
 					print_vec3(m.cp[i], "CP");
@@ -92,7 +92,11 @@ int wmain()
 
         gl_draw(basic_renderer, rect_shape_data, 0, true, player.position, player.shape.dim, player.orientation);
         gl_draw(basic_renderer, rect_shape_data, 0, true, box.position, box.shape.dim, box.orientation, V4(1, 0, 0, 1));
-		gl_draw(basic_renderer, rect_shape_data, 0, true, wall.position, wall.shape.dim, wall.orientation, V4(0, 0, 1, 1));
+		gl_draw(basic_renderer, rect_shape_data, 0, true, wall.position, wall.shape.dim, wall.orientation, V4(0, 0, 1, 1)); 
+		for(int i = 0; i < m.cp.size(); ++i)
+		{
+			gl_draw(basic_renderer, rect_shape_data, 0, true, m.cp[i], {10,10}, V4(1, 1, 0, 1)); 
+		}
 
         SDL_GL_SwapWindow(app_core.graphics.window);
         update_clock(&app_core.clock);
