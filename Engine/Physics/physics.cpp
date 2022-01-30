@@ -6,9 +6,10 @@ RigidBody create_body(Shape shape, Vector3 p, Vector3 v, float mass)
     body.position = p;
     body.velocity = v;
     body.inverse_mass = mass > 0 ? 1.0f / mass : 0;
-    body.inverse_inertia = {};
+    float inertia = 1.0f / 12.0f * mass * (shape.dim.x * shape.dim.x + shape.dim.y * shape.dim.y);
+    body.inverse_inertia = 1 / inertia;
     body.shape = shape;
-    update_shape(&body.shape, p, body.orientation);
+    update_shape(&body.shape, p, body.shape.dim, {0, 0, 1}, body.orientation);
 
     return body;
 }
@@ -46,12 +47,9 @@ void integrate_for_position(RigidBody* body, float dt)
     
     if(!body->freeze_orientation)
     {
-        body->orientation = body->orientation + make_quaternion(body->angular_velocity * dt * 0.5f, 0.0f);
-
-        body->orientation = normalize(body->orientation);
+        body->orientation += body->angular_velocity * dt;
     }
-
-    update_shape(&body->shape, body->position, body->orientation);
+    update_shape(&body->shape, body->position, body->shape.dim, {0, 0, 1}, body->orientation);
 }
 
 void solve_distance_constraint(DistanceConstraint* c, float dt)
@@ -59,8 +57,8 @@ void solve_distance_constraint(DistanceConstraint* c, float dt)
     RigidBody* body_a = c->body_a;
     RigidBody* body_b = c->body_b;
 
-    Vector3 r1 = to_mat3(body_a->orientation) * c->rel_pos_a;
-    Vector3 r2 = to_mat3(body_b->orientation) * c->rel_pos_b;
+    Vector3 r1 = angle_vec(body_a->orientation) * c->rel_pos_a;
+    Vector3 r2 = angle_vec(body_b->orientation) * c->rel_pos_b;
 
     Vector3 global_a = r1 + body_a->position;
     Vector3 global_b = r2 + body_b->position;
@@ -68,8 +66,8 @@ void solve_distance_constraint(DistanceConstraint* c, float dt)
     Vector3 ab = global_b - global_a;
     Vector3 n = normalize(ab);
 
-    Vector3 vel_a = body_a->velocity + cross(body_a->angular_velocity, r1);
-    Vector3 vel_b = body_b->velocity + cross(body_b->angular_velocity, r2);
+    Vector3 vel_a = body_a->velocity + cross(angle_vec(body_a->angular_velocity), r1);
+    Vector3 vel_b = body_b->velocity + cross(angle_vec(body_b->angular_velocity), r2);
 
     float rel_vel = dot(vel_a - vel_b, n); 
 
@@ -93,8 +91,8 @@ void solve_distance_constraint(DistanceConstraint* c, float dt)
         body_b->velocity -= n * (body_b->inverse_mass * jn);
         
         if(!body_a->freeze_orientation)
-            body_a->angular_velocity += body_a->inverse_inertia * cross(r1, n * jn);
+            body_a->angular_velocity += to_angle(body_a->inverse_inertia * cross(r1, n * jn));
         if(!body_b->freeze_orientation)
-            body_b->angular_velocity += body_b->inverse_inertia * cross(r2, n * jn);
+            body_b->angular_velocity += to_angle(body_b->inverse_inertia * cross(r2, n * jn));
     }
 }

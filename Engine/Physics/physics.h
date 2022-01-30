@@ -21,10 +21,10 @@ struct RigidBody
     
     float inverse_mass;
     
-    Quaternion orientation;
-    Vector3 angular_velocity;
-    Vector3 torgue;
-    Mat3 inverse_inertia;
+    float orientation;
+    float angular_velocity;
+    float torgue;
+    float inverse_inertia;
 
     float restitution;
     float friction; 
@@ -33,6 +33,7 @@ struct RigidBody
 };
 
 #include "constraints.h"
+#include "sat.h"
 
 RigidBody create_body(Shape shape, Vector3 p, Vector3 v, float mass);
 
