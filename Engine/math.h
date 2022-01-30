@@ -155,6 +155,12 @@ inline Vector3 operator*(float k, Vector3 a)
     return result;
 }
 
+inline Vector3 operator*(Vector3 a, Vector3 b)
+{
+    Vector3 result = {a.x * b.x, a.y * b.y, a.z * b.z};
+    return result;
+}
+
 inline Vector3 operator/(Vector3 a, float k)
 {
 	float inverse = 1.0f / k;
@@ -177,6 +183,17 @@ inline Vector3 operator-=(Vector3& a, Vector3 b)
 inline bool operator==(Vector3 a, Vector3 b)
 {
 	return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+
+Vector3 angle_vec(float theta)
+{
+	Vector3 a = {cosf(theta), sinf(theta), 0};
+	return a;
+}
+
+float to_angle(Vector3 a)
+{
+	return atan2(a.y, a.x);
 }
 
 inline float dot(Vector3 a, Vector3 b)
