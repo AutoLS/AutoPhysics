@@ -39,22 +39,16 @@ int wmain()
 
 		physics_time_accumlator += frame_time;
 		Manifold m = {};
+		if(test_SAT(&player, &wall, &m))
+		{
+
+		}
         while(physics_time_accumlator >= physics_dt)
         {	
-			if(test_SAT(&player.shape, &wall.shape, &m))
-			{
-				printf("collided! n_contacts: %d\n", (int)m.cp.size());
-				print_vec3(m.normal, "Normal");
-				for(int i = 0; i < m.cp.size(); ++i)
-				{
-					print_vec3(m.cp[i], "CP");
-				}
-			}
-
 			integrate_for_velocity(&player, physics_dt);
 			integrate_for_velocity(&box, physics_dt);
 
-			solve_distance_constraint(&simple_constraint, physics_dt);
+			//solve_distance_constraint(&simple_constraint, physics_dt);
 
 			integrate_for_position(&player, physics_dt);
 			integrate_for_position(&box, physics_dt);
@@ -81,6 +75,14 @@ int wmain()
 		{
 			force += {0, -1};
 		}
+		if(key_down(SDL_SCANCODE_Q))
+		{
+			player.orientation += 1 * physics_dt;
+		}
+		if(key_down(SDL_SCANCODE_E))
+		{
+			player.orientation -= 1 * physics_dt;
+		}
 
 		player.force += normalize(force) * weight;
 
@@ -90,12 +92,12 @@ int wmain()
 		gl_set_mat4(basic_renderer, "Projection", projection);
 		gl_set_mat4(basic_renderer, "View", mat4_identity());
 
-        gl_draw(basic_renderer, rect_shape_data, 0, true, player.position, player.shape.dim, player.orientation);
-        gl_draw(basic_renderer, rect_shape_data, 0, true, box.position, box.shape.dim, box.orientation, V4(1, 0, 0, 1));
-		gl_draw(basic_renderer, rect_shape_data, 0, true, wall.position, wall.shape.dim, wall.orientation, V4(0, 0, 1, 1)); 
+        gl_draw(basic_renderer, rect_shape_data, 0, true, player.position, player.shape.dim, V4(1, 1, 1, 1), player.orientation); 
+        gl_draw(basic_renderer, rect_shape_data, 0, true, box.position, box.shape.dim, V4(1, 0, 0, 1), box.orientation);
+		gl_draw(basic_renderer, rect_shape_data, 0, true, wall.position, wall.shape.dim, V4(0, 0, 1, 1), wall.orientation); 
 		for(int i = 0; i < m.cp.size(); ++i)
 		{
-			gl_draw(basic_renderer, rect_shape_data, 0, true, m.cp[i], {10,10}, V4(1, 1, 0, 1)); 
+			gl_draw(basic_renderer, rect_shape_data, 0, true, m.cp[i], {8,8}, V4(1, 1, 0, 1)); 
 		}
 
         SDL_GL_SwapWindow(app_core.graphics.window);
