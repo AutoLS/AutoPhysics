@@ -87,6 +87,12 @@ inline Vector2 reverse_perp(Vector2 a)
 	return V2(a.y, -a.x);
 }
 
+inline Vector2 rotate(Vector2 a, float theta)
+{
+	Vector2 result = V2(cos(theta) * a.x - sin(theta)*a.y, sin(theta)*a.x + cos(theta)*a.y);
+	return  result;
+}
+
 union Vector3
 {
 	struct
@@ -375,6 +381,36 @@ Mat3 transpose(Mat3 A)
 	return m;
 }
 
+float determinant(Mat3 m)
+{
+	float d = m._11*(m._22*m._33 - m._32*m._23) - m._12*(m._21*m._33 - m._23*m._31) + m._13*(m._21*m._32 - m._22*m._31);
+
+	return d;
+}
+
+Mat3 inverse(Mat3 m)
+{
+	Mat3 ret;
+	float det = determinant(m);
+	if (det != 0.f)
+	{
+		float invdet = 1.0f / det;
+		ret._11 = (m._22*m._33 - m._32*m._23) * invdet;
+		ret._12 = -(m._12*m._33 - m._13*m._32) * invdet;
+		ret._13 = (m._12*m._23 - m._13*m._22) * invdet;
+
+		ret._21 = -(m._21*m._33 - m._23*m._31) * invdet;
+		ret._22 = (m._11*m._33 - m._13*m._31) * invdet;
+		ret._23 = -(m._11*m._23 - m._21*m._13) * invdet;
+
+		ret._31 = (m._21*m._32 - m._31*m._22) * invdet;
+		ret._32 = -(m._11*m._32 - m._31*m._12) * invdet;
+		ret._33 = (m._11*m._22 - m._21*m._12) * invdet;
+	}
+
+	return ret;
+}
+
 union Mat4
 {
 	struct
@@ -547,6 +583,18 @@ Quaternion operator+(Quaternion q1, Quaternion q2)
 	Quaternion q = {q1.x + q2.x, q1.y + q2.y, q1.z + q2.z, q1.w + q2.w};
 	return q;
 } 
+
+Quaternion operator*(Quaternion a, Quaternion b)
+{
+	Quaternion q;
+
+	q.w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z;
+	q.x = a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y;
+	q.y = a.w * b.y + a.y * b.w + a.z * b.x - a.x * b.z;
+	q.z = a.w * b.z + a.z * b.w + a.x * b.y - a.y * b.x;
+
+	return q;
+}
 
 float dot(Quaternion a, Quaternion b)
 {
