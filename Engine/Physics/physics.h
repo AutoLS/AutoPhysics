@@ -21,10 +21,10 @@ struct RigidBody
     
     float inverse_mass;
     
-    float orientation;
-    float angular_velocity;
-    float torgue;
-    float inverse_inertia;
+    Quaternion orientation;
+    Vector3 angular_velocity;
+    Vector3 torgue;
+    Mat3 inverse_inertia;
 
     float restitution;
     float friction; 
