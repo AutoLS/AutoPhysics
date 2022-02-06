@@ -6,7 +6,7 @@
 
 static float physics_current_time = 0.0f;
 static float physics_time_accumlator = 0;
-static float physics_dt = 1.0f / 60.0f;
+static float physics_dt = 1.0f / 120.0f;
 
 static Vector3 physics_gravity = {0, -98, 0};
 static float physics_damping_factor = 0.95f;
@@ -42,6 +42,6 @@ void set_damping_factor(float k);
 
 void integrate_for_velocity(RigidBody* body, float dt);
 void integrate_for_position(RigidBody* body, float dt);
-void apply_impulse(DistanceConstraint* c);
+void apply_impulse(Constraint* c);
 
 #endif 
