@@ -87,6 +87,11 @@ inline Vector2 reverse_perp(Vector2 a)
 	return V2(a.y, -a.x);
 }
 
+inline Vector2 cross(Vector2 a, float k)
+{
+	return V2(-1 * a.y * k, a.x * k);
+}
+
 inline Vector2 rotate(Vector2 a, float theta)
 {
 	Vector2 result = V2(cos(theta) * a.x - sin(theta)*a.y, sin(theta)*a.x + cos(theta)*a.y);
@@ -307,59 +312,59 @@ Mat3 mat3_identity()
 
 Mat3 operator*(Mat3 a, Mat3 b)
 {
-	Mat3 out;
+	Mat3 result;
 
-	out._11 = a._11 * b._11 + a._12 * b._21 + a._13 * b._31;
-	out._12 = a._11 * b._12 + a._12 * b._22 + a._13 * b._32;
-	out._13 = a._11 * b._13 + a._12 * b._23 + a._13 * b._33;
+	result._11 = a._11 * b._11 + a._12 * b._21 + a._13 * b._31;
+	result._12 = a._11 * b._12 + a._12 * b._22 + a._13 * b._32;
+	result._13 = a._11 * b._13 + a._12 * b._23 + a._13 * b._33;
 
-	out._21 = a._21 * b._11 + a._22 * b._21 + a._23 * b._31;
-	out._22 = a._21 * b._12 + a._22 * b._22 + a._23 * b._32;
-	out._23 = a._21 * b._13 + a._22 * b._23 + a._23 * b._33;
+	result._21 = a._21 * b._11 + a._22 * b._21 + a._23 * b._31;
+	result._22 = a._21 * b._12 + a._22 * b._22 + a._23 * b._32;
+	result._23 = a._21 * b._13 + a._22 * b._23 + a._23 * b._33;
 
-	out._31 = a._31 * b._11 + a._32 * b._21 + a._33 * b._31;
-	out._32 = a._31 * b._12 + a._32 * b._22 + a._33 * b._32;
-	out._33 = a._31 * b._13 + a._32 * b._23 + a._33 * b._33;
+	result._31 = a._31 * b._11 + a._32 * b._21 + a._33 * b._31;
+	result._32 = a._31 * b._12 + a._32 * b._22 + a._33 * b._32;
+	result._33 = a._31 * b._13 + a._32 * b._23 + a._33 * b._33;
 
-	return out;
+	return result;
 }
 
 Vector3 operator*(Mat3& a, Vector3 b)
 {
-	Vector3 out;
+	Vector3 result;
 
-	out.x = a._11 * b.x
+	result.x = a._11 * b.x
 		+ a._21 * b.y
 		+ a._31 * b.z;
 
-	out.y = a._12 * b.x
+	result.y = a._12 * b.x
 		+ a._22 * b.y
 		+ a._32 * b.z;
 
-	out.z = a._13 * b.x
+	result.z = a._13 * b.x
 		+ a._23 * b.y
 		+ a._33 * b.z;
 
-	return out;
+	return result;
 }
 
 Vector3 operator*(Vector3 b, Mat3& a)
 {
-	Vector3 out;
+	Vector3 result;
 
-	out.x = a._11 * b.x
+	result.x = a._11 * b.x
 		+ a._21 * b.y
 		+ a._31 * b.z;
 
-	out.y = a._12 * b.x
+	result.y = a._12 * b.x
 		+ a._22 * b.y
 		+ a._32 * b.z;
 
-	out.z = a._13 * b.x
+	result.z = a._13 * b.x
 		+ a._23 * b.y
 		+ a._33 * b.z;
 
-	return out;
+	return result;
 }
 
 Mat3 transpose(Mat3 A)
@@ -434,123 +439,123 @@ union Mat4
 
 Mat4 mat4_identity()
 {
-	Mat4 Result = {};
+	Mat4 result = {};
 	for(int r = 0; r < 4; ++r)
 	{
-		Result.E[r][r] = 1;
+		result.E[r][r] = 1;
 	}
 	
-	return Result;
+	return result;
 }
 
 Mat4 operator*(Mat4 A, Mat4 B)
 {
-	Mat4 Result = {};
+	Mat4 result = {};
 	for(int r = 0; r < 4; ++r)
 	{
 		for(int c = 0; c < 4; ++c)
 		{
-			Result.E[r][c] = A.E[r][0] * B.E[0][c] +
+			result.E[r][c] = A.E[r][0] * B.E[0][c] +
 							 A.E[r][1] * B.E[1][c] +
 							 A.E[r][2] * B.E[2][c] +
 							 A.E[r][3] * B.E[3][c];
 		}
 	}
-	return Result;
+	return result;
 }
 
 Vector4 operator*(Mat4 &A, Vector4 B)
 {
-	Vector4 Result = {};
-	float* PtrResult = &Result.x;
+	Vector4 result = {};
+	float* ptr_result = &result.x;
 	for(int i = 0; i < 4; ++i)
 	{
-		*(PtrResult + i) = A.E[i][0] * B.x +
+		*(ptr_result + i) = A.E[i][0] * B.x +
 						   A.E[i][1] * B.y +
 						   A.E[i][2] * B.z +
 						   A.E[i][3] * B.w;
 	}
-	return Result;
+	return result;
 }
 
 Vector4 operator*(Vector4 B, Mat4 &A)
 {
-	Vector4 Result = {};
-	float* PtrResult = &Result.x;
+	Vector4 result = {};
+	float* ptr_result = &result.x;
 	for(int i = 0; i < 4; ++i)
 	{
-		*(PtrResult + i) = A.E[i][0] * B.x +
+		*(ptr_result + i) = A.E[i][0] * B.x +
 						   A.E[i][1] * B.y +
 						   A.E[i][2] * B.z +
 						   A.E[i][3] * B.w;
 	}
-	return Result;
+	return result;
 }
 
 Mat4 mat4_scale(Mat4& A, Vector3 K)
 {
-	Mat4 Result = A;
-	float* Ptr = &K.x;
+	Mat4 result = A;
+	float* ptr = &K.x;
 	for(int r = 0; r < 3; ++r)
 	{
-		Result.E[r][r] *= *(Ptr + r);
+		result.E[r][r] *= *(ptr + r);
 	}
 	
-	return Result;
+	return result;
 }
 
 Mat4 mat4_translate(Mat4 A, Vector3 T)
 {
-	Mat4 Result = A;
+	Mat4 result = A;
 	
-	Result.E[0][3] += T.x;
-	Result.E[1][3] += T.y;
-	Result.E[2][3] += T.z;
+	result.E[0][3] += T.x;
+	result.E[1][3] += T.y;
+	result.E[2][3] += T.z;
 
-	return Result;
+	return result;
 }
 
-Mat4 mat4_rotate(Mat4 A, Vector3 Axis, float Theta)
+Mat4 mat4_rotate(Mat4 A, Vector3 axis, float theta)
 {
-	if(length(Axis))
-	Axis = normalize(Axis);
+	if(length(axis))
+	axis = normalize(axis);
 	
-	Mat4 Result = mat4_identity();
+	Mat4 result = mat4_identity();
 	
 	//p'
-	Result.E[0][0] = cosf(Theta) + ((Axis.x * Axis.x) * (1 - cosf(Theta)));
-	Result.E[0][1] = (Axis.x * Axis.y * (1 - cosf(Theta))) - (Axis.z * sinf(Theta));
-	Result.E[0][2] = (Axis.x * Axis.z * (1 - cosf(Theta))) + (Axis.y * sinf(Theta));
+	result.E[0][0] = cosf(theta) + ((axis.x * axis.x) * (1 - cosf(theta)));
+	result.E[0][1] = (axis.x * axis.y * (1 - cosf(theta))) - (axis.z * sinf(theta));
+	result.E[0][2] = (axis.x * axis.z * (1 - cosf(theta))) + (axis.y * sinf(theta));
 	
 	//q'
-	Result.E[1][0] = (Axis.y * Axis.x * (1 - cosf(Theta))) + (Axis.z * sinf(Theta));
-	Result.E[1][1] = cosf(Theta) + ((Axis.y * Axis.y) * (1 - cosf(Theta)));
-	Result.E[1][2] = (Axis.z * Axis.y * (1 - cosf(Theta))) - (Axis.x * sinf(Theta));
+	result.E[1][0] = (axis.y * axis.x * (1 - cosf(theta))) + (axis.z * sinf(theta));
+	result.E[1][1] = cosf(theta) + ((axis.y * axis.y) * (1 - cosf(theta)));
+	result.E[1][2] = (axis.z * axis.y * (1 - cosf(theta))) - (axis.x * sinf(theta));
 	
 	//r'
-	Result.E[2][0] = (Axis.z * Axis.x * (1 - cosf(Theta))) - (Axis.y * sinf(Theta));
-	Result.E[2][1] = (Axis.z * Axis.y * (1 - cosf(Theta))) + (Axis.x * sinf(Theta));
-	Result.E[2][2] = cosf(Theta) + ((Axis.z * Axis.z) * (1 - cosf(Theta)));
+	result.E[2][0] = (axis.z * axis.x * (1 - cosf(theta))) - (axis.y * sinf(theta));
+	result.E[2][1] = (axis.z * axis.y * (1 - cosf(theta))) + (axis.x * sinf(theta));
+	result.E[2][2] = cosf(theta) + ((axis.z * axis.z) * (1 - cosf(theta)));
 	
-	Result = Result * A;
+	result = result * A;
 	
-	return Result;
+	return result;
 }
 
-Mat4 mat4_ortho(float Left, float Right, 
-		        float Bottom, float Top, 
-		        float Near, float Far)
+Mat4 mat4_ortho(float left, float right, 
+		        float bottom, float top, 
+		        float near_, float far_)
 {
-	Mat4 Result = mat4_identity();
-	Result.E[0][0] = 2 / (Right - Left);
-	Result.E[1][1] = 2 / (Top - Bottom);
-	Result.E[2][2] = -2 / (Far - Near);
+	Mat4 result = mat4_identity();
+	result.E[0][0] = 2 / (right - left);
+	result.E[1][1] = 2 / (top - bottom);
+	result.E[2][2] = -2 / (far_ - near_);
 	
-	Result.E[0][3] = -(Right + Left) / (Right - Left);
-	Result.E[1][3] = -(Top + Bottom) / (Top - Bottom);
-	Result.E[2][3] = -(Far + Near) / (Far - Near);
+	result.E[0][3] = -(right + left) / (right - left);
+	result.E[1][3] = -(top + bottom) / (top - bottom);
+	result.E[2][3] = -(far_ + near_) / (far_ - near_);
 	
-	return Result;
+	return result;
 }
 
 struct Quaternion 
