@@ -149,6 +149,24 @@ int get_furthest_point_index_in_direction(Shape* shape, Vector3 dir)
     return index;
 }
 
+int get_furthest_local_point_index_in_direction(Shape* shape, Vector3 dir)
+{
+    float max = -FLT_MAX;
+    u32 index = 0;
+
+    for(int i = 0; i < shape->vertices_count; ++i)
+    {
+        float dot_product = dot(shape->local_vertices[i], dir);
+        if(dot_product > max)
+        {
+            max = dot_product;
+            index = i;
+        }
+    }
+
+    return index;
+}
+
 float get_shape_radius(Shape* shape)
 {
     return length(get_furthest_vertex(shape) - shape->center_pos);
@@ -164,24 +182,24 @@ Shape create_shape(Vector3 dim, ShapeType type, Vector3* vertices)
     {
         case ShapeType::RECTANGLE:
         {
-            //NOTE: Vertices order start from top left, clockwise
+            //NOTE: Vertices order start from top left, counter-clockwise
             shape.vertices_count = 4;
             shape.local_vertices = (Vector3*)malloc(sizeof(Vector3) * shape.vertices_count);
             shape.global_vertices = (Vector3*)malloc(sizeof(Vector3) * shape.vertices_count);
             shape.local_vertices[0] = V3(-0.5f, 0.5f, 0);
-            shape.local_vertices[1] = V3(0.5f, 0.5f, 0);
+            shape.local_vertices[1] = V3(-0.5f, -0.5f, 0);
             shape.local_vertices[2] = V3(0.5f, -0.5f, 0);
-            shape.local_vertices[3] = V3(-0.5f, -0.5f, 0);
+            shape.local_vertices[3] = V3(0.5f, 0.5f, 0);
         } break;
         case ShapeType::TRIANGLE:
         {
             /* NOTE: Vertices order
-                1
+                2
                 *   *
                         *
                 *           *
                                 *
-                *                   2
+                *                   1
                                 *
                 *           *
                         *    
@@ -191,61 +209,35 @@ Shape create_shape(Vector3 dim, ShapeType type, Vector3* vertices)
             shape.vertices_count = 3;
             shape.local_vertices = (Vector3*)malloc(sizeof(Vector3) * shape.vertices_count);
             shape.global_vertices = (Vector3*)malloc(sizeof(Vector3) * shape.vertices_count);
-            shape.local_vertices[0] = V3(-0.5f, 0.5f, 0);
-            shape.local_vertices[1] = V3(0.5f, 0, 0);
+            shape.local_vertices[0] = V3(0.5f, 0, 0);
+            shape.local_vertices[1] = V3(-0.5f, 0.5f, 0);
             shape.local_vertices[2] = V3(-0.5f, -0.5f, 0);
         } break;
         case ShapeType::RIGHT_TRIANGLE:
         {
             /* NOTE: Vertices order
-                1
+                2
                 * *
                 *  *
                 *   *
                 *    *
-                3 * * 2 
+                3 * * 1 
             */
             shape.vertices_count = 3;
             shape.local_vertices = (Vector3*)malloc(sizeof(Vector3) * shape.vertices_count);
             shape.global_vertices = (Vector3*)malloc(sizeof(Vector3) * shape.vertices_count);
-            shape.local_vertices[0] = V3(-0.5f, 0.5f, 0);
-            shape.local_vertices[1] = V3(0.5f, -0.5f, 0);
+            shape.local_vertices[0] = V3(0.5f, -0.5f, 0);
+            shape.local_vertices[1] = V3(-0.5f, 0.5f, 0);
             shape.local_vertices[2] = V3(-0.5f, -0.5f, 0);
         } break;
         case ShapeType::CUSTOM:
         {
             shape.local_vertices = vertices;
+            shape.global_vertices = vertices;
         } break;
     }
 
     return shape;
-}
-
-void reset_shape_vertices(Shape* shape)
-{
-    //TODO: Handle custom shapes
-    switch(shape->type)
-    {
-        case ShapeType::RECTANGLE:
-        {
-            shape->local_vertices[0] = V3(-0.5f, 0.5f, 0);
-            shape->local_vertices[1] = V3(0.5f, 0.5f, 0);
-            shape->local_vertices[2] = V3(0.5f, -0.5f, 0);
-            shape->local_vertices[3] = V3(-0.5f, -0.5f, 0);
-        } break;
-        case ShapeType::TRIANGLE:
-        {
-            shape->local_vertices[0] = V3(-0.5f, 0.5f, 0);
-            shape->local_vertices[1] = V3(0.5f, 0, 0);
-            shape->local_vertices[2] = V3(-0.5f, -0.5f, 0);
-        } break;
-        case ShapeType::RIGHT_TRIANGLE:
-        {
-            shape->local_vertices[0] = V3(-0.5f, 0.5f, 0);
-            shape->local_vertices[1] = V3(0.5f, -0.5f, 0);
-            shape->local_vertices[2] = V3(-0.5f, -0.5f, 0);
-        } break;
-    }
 }
 
 void update_shape(Shape* shape, Vector3 pos, Vector3 dim, Vector3 axis, float angle)
@@ -409,7 +401,7 @@ Edge find_closest_edge(std::vector<SimplexPoint>* simplex)
 //NOTE: https://dyn4j.org/2010/05/epa-expanding-polytope-algorithm/
 //      https://dyn4j.org/2010/04/gjk-distance-closest-points/
 
-#define EPA_MAX_ITERATION 64
+#define EPA_MAX_ITERATION 32
 #define EPA_TOLERANCE 0.0001f
 
 void epa_2d(Simplex* s, Shape* shape_a, Shape* shape_b, Manifold* manifold)
@@ -472,6 +464,8 @@ void epa_2d(Simplex* s, Shape* shape_a, Shape* shape_b, Manifold* manifold)
         {
             simplex.insert(simplex.begin() + edge.index, new_point);
         }
+
+        max_iteration++;
     }
 } 
 
