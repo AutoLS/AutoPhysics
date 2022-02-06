@@ -14,6 +14,7 @@ int wmain()
 		V3(0.5f, 0.5f),   V3(1, 1)	//Top Right	
 	};
 
+
 	ShapeDataGL rect_shape_data = {};
 	gl_gen_shape(&rect_shape_data, rect_shape_vertices, 6, ARRAY_SIZE(rect_shape_vertices), 0, 0);
 	gl_upload_shape_data(&rect_shape_data);
@@ -22,12 +23,35 @@ int wmain()
 
 	u32 basic_renderer = gl_create_shader(gl_load_shader_source("shaders/basic_vert.glsl"),
 										  gl_load_shader_source("shaders/basic_frag.glsl"));
+	
+	// Vector3* custom_rect_vertices_1 = (Vector3*)malloc(sizeof(Vector3) * 4);
+	// custom_rect_vertices_1[0] = V3(9, 7, 0);
+	// custom_rect_vertices_1[1] = V3(5, 11, 0);
+	// custom_rect_vertices_1[2] = V3(2, 8, 0);
+	// custom_rect_vertices_1[3] = V3(6, 4, 0);
 
-	RigidBody player = create_body(create_shape({100, 100}), {100, 300}, {}, 5);
-	RigidBody box = create_body(create_shape({50, 50}), {200, 400}, {}, 3);
+	// Vector3* custom_rect_vertices_2 = (Vector3*)malloc(sizeof(Vector3) * 4);
+	// custom_rect_vertices_2[0] = V3(12, 5, 0);
+	// custom_rect_vertices_2[1] = V3(4, 5, 0);
+	// custom_rect_vertices_2[2] = V3(4, 2, 0);
+	// custom_rect_vertices_2[3] = V3(12, 2, 0);
+
+	// Shape test_shape_1 = create_shape({}, ShapeType::CUSTOM, custom_rect_vertices_1);
+	// test_shape_1.vertices_count = 4;
+	// Shape test_shape_2 = create_shape({}, ShapeType::CUSTOM, custom_rect_vertices_2);
+	// test_shape_2.vertices_count = 4;
+
+	// RigidBody test_box_1 = {};
+	// test_box_1.shape = test_shape_1;
+	// RigidBody test_box_2 = {};
+	// test_box_2.shape = test_shape_2;
+
+	RigidBody player = create_body(create_shape({100, 100}), {100, 350}, {}, 5);
+	RigidBody box = create_body(create_shape({50, 50}), {200, 450}, {}, 3);
 	RigidBody wall = create_body(create_shape({1000, 100}), {640, 200}, {}, 0);
 
 	DistanceConstraint simple_constraint = set_distance_constraint(&player, &box, player.position + V3(50, 0), box.position + V3(-25, 0));
+	bool angular_motion = false;
 
     while(handle_events())
     {
@@ -41,8 +65,14 @@ int wmain()
 		Manifold m = {};
 		if(test_SAT(&player, &wall, &m))
 		{
-
+			printf("collided! ");
+			print_vec3(m.normal, "Normal");
 		}
+		else
+		{
+			//printf("Not collided!\n");
+		}
+
         while(physics_time_accumlator >= physics_dt)
         {	
 			integrate_for_velocity(&player, physics_dt);
@@ -75,9 +105,17 @@ int wmain()
 		{
 			force += {0, -1};
 		}
+		if(key_ended_down(SDL_SCANCODE_SPACE))
+		{
+			angular_motion = !angular_motion;
+		}
 
 		player.force += normalize(force) * weight;
-		player.angular_velocity += V3(0, 0, 1) * physics_dt;
+
+		if(angular_motion)
+			player.angular_velocity += V3(0, 0, 1) * physics_dt;
+		else
+			player.angular_velocity = {};
 
         lock_fps(get_refresh_rate());
 
