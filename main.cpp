@@ -46,11 +46,12 @@ int wmain()
 	// RigidBody test_box_2 = {};
 	// test_box_2.shape = test_shape_2;
 
-	RigidBody player = create_body(create_shape({100, 100}), {100, 350}, {}, 5);
-	RigidBody box = create_body(create_shape({50, 50}), {200, 450}, {}, 3);
+	RigidBody player = create_body(create_shape({100, 100}), {100, 350}, {}, 3);
+	RigidBody box = create_body(create_shape({50, 50}), {200, 450}, {}, 1);
 	RigidBody wall = create_body(create_shape({1000, 100}), {640, 200}, {}, 0);
 
-	DistanceConstraint simple_constraint = set_distance_constraint(&player, &box, player.position + V3(50, 0), box.position + V3(-25, 0));
+	Constraint test_constraint = create_distance_constraint(&player, &box, player.position + V3(50, 0), box.position + V3(-25, 0));
+
 	bool angular_motion = false;
 
     while(handle_events())
@@ -78,7 +79,7 @@ int wmain()
 			integrate_for_velocity(&player, physics_dt);
 			integrate_for_velocity(&box, physics_dt);
 
-			solve_distance_constraint(&simple_constraint, physics_dt);
+			apply_impulse(&test_constraint, physics_dt);
 
 			integrate_for_position(&player, physics_dt);
 			integrate_for_position(&box, physics_dt);

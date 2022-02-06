@@ -115,3 +115,14 @@ void solve_distance_constraint(DistanceConstraint* c, float dt)
             body_b->angular_velocity += (body_b->inverse_inertia * cross(r2, n * jn));
     }
 }
+
+void apply_impulse(Constraint* c, float dt)
+{
+    switch(c->type)
+    {
+        case ConstraintType::DISTANCE:
+        {
+            solve_distance_constraint((DistanceConstraint*)c->constraint, dt);
+        } break;
+    }
+}

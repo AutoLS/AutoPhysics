@@ -3,6 +3,12 @@
 
 #include "../math.h"
 
+enum ConstraintType
+{
+    CONTACT,
+    DISTANCE
+};
+
 struct DistanceConstraint
 {
     RigidBody* body_a;
@@ -12,6 +18,12 @@ struct DistanceConstraint
 
     Vector3 rel_pos_a;
     Vector3 rel_pos_b;
+};
+
+struct Constraint
+{
+    ConstraintType type;
+    void* constraint;
 };
 
 DistanceConstraint set_distance_constraint(RigidBody* body_a, RigidBody* body_b, Vector3 global_a, Vector3 global_b)
@@ -30,6 +42,24 @@ DistanceConstraint set_distance_constraint(RigidBody* body_a, RigidBody* body_b,
     c.rel_pos_b = transpose(to_mat3(body_b->orientation)) * r2; 
 
     return c;
+}
+
+Constraint create_distance_constraint(RigidBody* body_a, RigidBody* body_b, Vector3 global_a, Vector3 global_b)
+{
+    Constraint c = {};
+    c.type = ConstraintType::DISTANCE;
+    c.constraint = malloc(sizeof(DistanceConstraint));
+    *(DistanceConstraint*)c.constraint = set_distance_constraint(body_a, body_b, global_a, global_b);
+
+    return c;
+}
+
+void destroy_constraint(Constraint* c)
+{
+    if(c->constraint != 0)
+    {
+        free(c->constraint);
+    }
 }
 
 #endif
