@@ -21,7 +21,7 @@ std::vector<Vector3> generate_test_axes(Shape* shape)
         Vector3 p2 = shape->global_vertices[i + 1 == shape->vertices_count ? 0 : i + 1];
 
         Vector3 edge = p2 - p1;
-        Vector3 n = V3(perp(edge.xy));
+        Vector3 n = V3(cross(edge.xy, -1));
         axes.push_back(normalize(n));
     }
 
@@ -58,34 +58,35 @@ float get_overlap_from_projection(Vector2 a, Vector2 b)
     return min(a.y, b.y) - max(a.x, b.x);
 }
 
+//NOTE: Winding order is counter clockwise
 ClippingEdge find_best_edge(Shape* shape, Vector3 n)
 {
     ClippingEdge result = {};
     int index = get_furthest_point_index_in_direction(shape, n);
-    int index_left = index - 1 < 0 ? shape->vertices_count-1 : index - 1;
-    int index_right = index + 1 == shape->vertices_count ? 0 : index + 1;
+    int index_prev = index - 1 < 0 ? shape->vertices_count-1 : index - 1;
+    int index_next = index + 1 == shape->vertices_count ? 0 : index + 1;
 
     result.max = shape->global_vertices[index];
 
     Vector3 v = shape->global_vertices[index]; 
-    Vector3 v_left = shape->global_vertices[index_left]; 
-    Vector3 v_right = shape->global_vertices[index_right]; 
+    Vector3 v_next = shape->global_vertices[index_next]; 
+    Vector3 v_prev = shape->global_vertices[index_prev]; 
 
-    Vector3 l = normalize(v - v_left);
-    Vector3 r = normalize(v - v_right);
+    Vector3 l = normalize(v - v_next);
+    Vector3 r = normalize(v - v_prev);
 
     if(dot(r, n) <= dot(l, n))
     {
-        result.edge = r;
-        result.v1 = v_right;
+        result.v1 = v_prev;
         result.v2 = v;
+        result.edge = result.v2 - result.v1;
         return result;
     }
     else
     {
-        result.edge = l;
-        result.v1 = v_left;
-        result.v2 = v;
+        result.v1 = v;
+        result.v2 = v_next;
+        result.edge = result.v2 - result.v1;
         return result;
     }
 }
@@ -112,13 +113,11 @@ std::vector<Vector3> clip(Vector3 v1, Vector3 v2, Vector3 n, float o)
     return cp;
 }
 
-std::vector<Vector3> generate_contacts(RigidBody* body_a, RigidBody* body_b, Vector3 normal)
+std::vector<Vector3> generate_contacts(Shape* shape_a, Shape* shape_b, Vector3 normal)
 {
-    Shape* shape_a = &body_a->shape; 
-    Shape* shape_b = &body_b->shape;
     std::vector<Vector3> cp;
-    ClippingEdge e1 = find_best_edge(shape_a, -normal);
-    ClippingEdge e2 = find_best_edge(shape_b, normal);
+    ClippingEdge e1 = find_best_edge(shape_a, normal);
+    ClippingEdge e2 = find_best_edge(shape_b, -normal);
     
     ClippingEdge ref, inc;
     bool flip = false;
@@ -144,17 +143,15 @@ std::vector<Vector3> generate_contacts(RigidBody* body_a, RigidBody* body_b, Vec
     cp = clip(cp[0], cp[1], -refv, -o2);
     if(cp.size() < 2) return {};
 
-    //TODO: This shit doesnt work
-    //Vector3 ref_n = V3(perp(ref.edge.xy));
-    Vector3 ref_n = cross(ref.edge, V3(-1, 0, 0));
+    //NOTE: if we flipped we have to use the left hand orthogonal vector otherwise use right hand
+    Vector3 ref_n = flip ? V3(reverse_perp(refv.xy)) : V3(perp(refv.xy));
+
     if(flip) ref_n = -ref_n;
-    print_vec3(ref_n, "n");
 
     float max = dot(ref_n, ref.max);
+
     float d0 = dot(ref_n, cp[0]);
     float d1 = dot(ref_n, cp[1]);
-    Vector3 cp0 = cp[0];
-    Vector3 cp1 = cp[1];
 
     if(d1 - max < 0)
     {
@@ -194,7 +191,7 @@ bool test_SAT(RigidBody* body_a, RigidBody* body_b, Manifold* manifold)
             if(o < overlap)
             {
                 overlap = o;
-                smallest = projection_a.y > projection_b.y ? axes_a[i] : -axes_a[i];
+                smallest = projection_a.y > projection_b.y ? -axes_a[i] : axes_a[i];
             }
         }
     }
@@ -214,7 +211,7 @@ bool test_SAT(RigidBody* body_a, RigidBody* body_b, Manifold* manifold)
             if(o < overlap)
             {
                 overlap = o;
-                smallest = projection_a.y > projection_b.y ? axes_b[i] : -axes_b[i];
+                smallest = projection_a.y > projection_b.y ? -axes_b[i] : axes_b[i];
             }
         }
     }
@@ -222,7 +219,7 @@ bool test_SAT(RigidBody* body_a, RigidBody* body_b, Manifold* manifold)
     manifold->normal = smallest;
     manifold->depth = overlap;
     manifold->mtv = smallest * overlap;
-    manifold->cp = generate_contacts(body_a, body_b, manifold->normal);
+    manifold->cp = generate_contacts(shape_a, shape_b, manifold->normal);
 
     return true;
 }
