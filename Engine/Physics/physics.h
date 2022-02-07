@@ -32,8 +32,10 @@ struct RigidBody
     bool freeze_orientation;
 };
 
+#include "manifold.h"
 #include "constraints.h"
 #include "sat.h"
+#include "gjk.h"
 
 RigidBody create_body(Shape shape, Vector3 p, Vector3 v, float mass);
 
@@ -42,6 +44,6 @@ void set_damping_factor(float k);
 
 void integrate_for_velocity(RigidBody* body, float dt);
 void integrate_for_position(RigidBody* body, float dt);
-void apply_impulse(Constraint* c);
+void apply_impulse(Constraint* c, float dt);
 
 #endif 

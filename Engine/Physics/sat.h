@@ -113,7 +113,7 @@ std::vector<Vector3> clip(Vector3 v1, Vector3 v2, Vector3 n, float o)
     return cp;
 }
 
-std::vector<Vector3> generate_contacts(Shape* shape_a, Shape* shape_b, Vector3 normal)
+std::vector<Vector3> generate_contact_points(Shape* shape_a, Shape* shape_b, Vector3 normal)
 {
     std::vector<Vector3> cp;
     ClippingEdge e1 = find_best_edge(shape_a, normal);
@@ -216,10 +216,13 @@ bool test_SAT(RigidBody* body_a, RigidBody* body_b, Manifold* manifold)
         }
     }
 
+    manifold->body_a = body_a;
+    manifold->body_b = body_b;
     manifold->normal = smallest;
     manifold->depth = overlap;
     manifold->mtv = smallest * overlap;
-    manifold->cp = generate_contacts(shape_a, shape_b, manifold->normal);
+    manifold->cp = generate_contact_points(shape_a, shape_b, manifold->normal);
+    add_contact(manifold);
 
     return true;
 }

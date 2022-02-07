@@ -7,10 +7,13 @@ RigidBody create_body(Shape shape, Vector3 p, Vector3 v, float mass)
     body.velocity = v;
     body.inverse_mass = mass > 0 ? 1.0f / mass : 0;
     Mat3 inertia_tensor = {};
-    inertia_tensor._11 = 1/12 * mass * (shape.dim.x * shape.dim.x + shape.dim.y * shape.dim.y);
-    inertia_tensor._22 = 1/12 * mass * (shape.dim.x * shape.dim.x + shape.dim.y * shape.dim.y);
-    inertia_tensor._33 = 1/12 * mass * (shape.dim.x * shape.dim.x + shape.dim.y * shape.dim.y);
-    body.inverse_inertia = inverse(inertia_tensor);
+    if(mass != 0)
+    {
+        inertia_tensor._11 = 1/12 * mass * (shape.dim.x * shape.dim.x + shape.dim.y * shape.dim.y);
+        inertia_tensor._22 = 1/12 * mass * (shape.dim.x * shape.dim.x + shape.dim.y * shape.dim.y);
+        inertia_tensor._33 = 1/12 * mass * (shape.dim.x * shape.dim.x + shape.dim.y * shape.dim.y);
+        body.inverse_inertia = inverse(inertia_tensor);
+    }
     body.shape = shape;
     update_shape(&body.shape, p, body.orientation);
 
@@ -31,11 +34,11 @@ void integrate_for_velocity(RigidBody* body, float dt)
 {
     if(body->inverse_mass > 0)
     {
-        //body->velocity += physics_gravity * dt;
+        body->velocity += physics_gravity * dt;
     }
 
     body->velocity += body->force * body->inverse_mass * dt;
-    body->velocity = body->velocity * physics_damping_factor;
+    body->velocity.x = body->velocity.x * physics_damping_factor;
 
     if(!body->freeze_orientation)
     {

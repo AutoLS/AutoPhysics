@@ -49,6 +49,8 @@ int wmain()
 	RigidBody player = create_body(create_shape({100, 100}), {100, 350}, {}, 3);
 	RigidBody box = create_body(create_shape({50, 50}), {200, 450}, {}, 1);
 	RigidBody wall = create_body(create_shape({1000, 100}), {640, 200}, {}, 0);
+	wall.friction = 0.5f;
+	player.friction = 0.5f;
 
 	Constraint test_constraint = create_distance_constraint(&player, &box, player.position + V3(50, 0), box.position + V3(-25, 0));
 
@@ -66,8 +68,7 @@ int wmain()
 		Manifold m = {};
 		if(test_SAT(&player, &wall, &m))
 		{
-			printf("collided! ");
-			print_vec3(m.normal, "Normal");
+			player.position -= m.mtv;
 		}
 		else
 		{
@@ -76,13 +77,23 @@ int wmain()
 
         while(physics_time_accumlator >= physics_dt)
         {	
-			integrate_for_velocity(&player, physics_dt);
-			integrate_for_velocity(&box, physics_dt);
+			for(Contact& c : m.contacts)
+			{
+				update_contact(&m, &c);
+			}
 
-			apply_impulse(&test_constraint, physics_dt);
+			integrate_for_velocity(&player, physics_dt);
+			//integrate_for_velocity(&box, physics_dt);
+
+			for(Contact& c : m.contacts)
+			{
+				solve_contact_constraint(&m, &c);
+			}
+
+			//apply_impulse(&test_constraint, physics_dt);
 
 			integrate_for_position(&player, physics_dt);
-			integrate_for_position(&box, physics_dt);
+			//integrate_for_position(&box, physics_dt);
 
             physics_time_accumlator -= physics_dt;
         }
