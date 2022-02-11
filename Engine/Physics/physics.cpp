@@ -5,15 +5,21 @@ RigidBody create_body(Shape shape, Vector3 p, Vector3 v, float mass)
     RigidBody body = {};
     body.position = p;
     body.velocity = v;
+    body.orientation = make_quaternion({}, 1.0f);
     body.inverse_mass = mass > 0 ? 1.0f / mass : 0;
     Mat3 inertia_tensor = {};
+
     if(mass != 0)
     {
-        inertia_tensor._11 = 1/12 * mass * (shape.dim.x * shape.dim.x + shape.dim.y * shape.dim.y);
-        inertia_tensor._22 = 1/12 * mass * (shape.dim.x * shape.dim.x + shape.dim.y * shape.dim.y);
-        inertia_tensor._33 = 1/12 * mass * (shape.dim.x * shape.dim.x + shape.dim.y * shape.dim.y);
+        float oneTwelve = 1.0f / 12.0f;
+        float xx = shape.dim.x * shape.dim.x;
+        float yy = shape.dim.y * shape.dim.y;
+        inertia_tensor._11 = oneTwelve * mass * (yy);
+        inertia_tensor._22 = oneTwelve * mass * (xx);
+        inertia_tensor._33 = oneTwelve * mass * (xx + yy);
         body.inverse_inertia = inverse(inertia_tensor);
     }
+    
     body.shape = shape;
     update_shape(&body.shape, p, body.orientation);
 

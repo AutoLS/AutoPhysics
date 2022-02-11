@@ -222,7 +222,10 @@ bool test_SAT(RigidBody* body_a, RigidBody* body_b, Manifold* manifold)
     manifold->depth = overlap;
     manifold->mtv = smallest * overlap;
     manifold->cp = generate_contact_points(shape_a, shape_b, manifold->normal);
-    add_contact(manifold);
+    for(int i = 0; i < manifold->cp.size(); ++i)
+    {
+        add_contact(manifold, manifold->cp[i]);
+    }
 
     return true;
 }

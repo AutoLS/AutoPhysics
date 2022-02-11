@@ -11,6 +11,12 @@ static float physics_dt = 1.0f / 120.0f;
 static Vector3 physics_gravity = {0, -98, 0};
 static float physics_damping_factor = 0.95f;
 
+enum DebugType
+{
+    OTHER,
+    PLAYER,
+};
+
 struct RigidBody
 {
     Shape shape;
@@ -30,6 +36,10 @@ struct RigidBody
     float friction; 
 
     bool freeze_orientation;
+
+    //Debug purpose
+    Vector4 color;
+    DebugType type;
 };
 
 #include "manifold.h"

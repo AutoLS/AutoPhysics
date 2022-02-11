@@ -36,25 +36,10 @@ struct Manifold
     std::vector<Contact> contacts;
 };
 
-void add_contact(Manifold* manifold)
+void add_contact(Manifold* manifold, Vector3 p)
 {
-    Vector3 r1, r2;
-    switch(manifold->cp.size())
-    {
-        case 1:
-        {
-            r1 = manifold->cp[0] - manifold->body_a->position; 
-            r2 = manifold->cp[0] - manifold->body_b->position; 
-        } break;
-        case 2:
-        {
-            r1 = manifold->cp[0] - manifold->body_a->position; 
-            r2 = manifold->cp[1] - manifold->body_b->position; 
-        } break;
-        default:
-            r1 = {};
-            r2 = {};
-    }
+    Vector3 r1 = p - manifold->body_a->position;
+    Vector3 r2 = p - manifold->body_b->position;
 
     Contact contact;
     contact.rel_pos_a = r1;
@@ -92,12 +77,48 @@ void solve_contact_constraint(Manifold* m, Contact* c)
     Vector3 r1 = c->rel_pos_a;
     Vector3 r2 = c->rel_pos_b;
 
+    //Resolution
+#if 1
+    Vector3 j1 = m->body_a->inverse_mass == 0 ? V3() : -c->normal;
+    Vector3 j2 = m->body_a->inverse_mass == 0 ? V3() : cross(r1, c->normal);
+    Vector3 j3 = m->body_b->inverse_mass == 0 ? V3() : c->normal;
+    Vector3 j4 = m->body_b->inverse_mass == 0 ? V3() : -cross(r2, c->normal);
+    
+    float k = m->body_a->inverse_mass + dot(j2, m->body_a->inverse_inertia * j2) +
+              m->body_b->inverse_mass + dot(j4, m->body_a->inverse_inertia * j4);
+
+    if(k != 0)
+    {
+        float effective_mass = 1.0f / k;
+
+        float jv = dot(j1, m->body_a->velocity) +
+                   dot(j2, m->body_a->angular_velocity) +
+                   dot(j3, m->body_b->velocity) +
+                   dot(j4, m->body_b->angular_velocity);
+
+        float beta = 0.5f;
+        float restitution = m->body_a->restitution * m->body_b->restitution;
+        Vector3 rel_vel = -m->body_a->velocity - cross(m->body_a->angular_velocity, r1) +
+                           m->body_b->velocity + cross(m->body_b->angular_velocity, r2);
+        
+        float closing_vel = dot(rel_vel, c->normal);
+        float b = -(beta / physics_dt) * c->depth + restitution * closing_vel;
+        
+        float lambda = effective_mass * (-(jv + b));
+        lambda = max(lambda, 0);
+
+        m->body_a->velocity += m->body_a->inverse_mass * j1 * lambda;
+        m->body_b->velocity += m->body_b->inverse_mass * j3 * lambda;
+        m->body_a->angular_velocity += m->body_a->inverse_inertia * j2 * lambda;
+        m->body_b->angular_velocity += m->body_b->inverse_inertia * j4 * lambda;
+    }
+
+#else
     Vector3 va = m->body_a->velocity + cross(m->body_a->angular_velocity, r1);
     Vector3 vb = m->body_b->velocity + cross(m->body_b->angular_velocity, r2);
 
     Vector3 vab = vb - va;
 
-    //Resolution
     Vector3 mI = cross(m->body_a->inverse_inertia * cross(r1, c->normal), r1) + 
                  cross(m->body_b->inverse_inertia * cross(r2, c->normal), r2);
 
@@ -141,6 +162,7 @@ void solve_contact_constraint(Manifold* m, Contact* c)
             m->body_b->angular_velocity += m->body_b->inverse_inertia * cross(r2, tangent * jt);
         }                      
     }
+#endif
 }
 
 #endif

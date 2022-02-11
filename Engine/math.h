@@ -92,6 +92,11 @@ inline Vector2 cross(Vector2 a, float k)
 	return V2(-1 * a.y * k, a.x * k);
 }
 
+inline float cross(Vector2 a, Vector2 b)
+{
+	return a.x * b.y - a.y * b.x;
+}
+
 inline Vector2 rotate(Vector2 a, float theta)
 {
 	Vector2 result = V2(cos(theta) * a.x - sin(theta)*a.y, sin(theta)*a.x + cos(theta)*a.y);
@@ -397,7 +402,7 @@ Mat3 inverse(Mat3 m)
 {
 	Mat3 ret;
 	float det = determinant(m);
-	if (det != 0.f)
+	if (det != 0)
 	{
 		float invdet = 1.0f / det;
 		ret._11 = (m._22*m._33 - m._32*m._23) * invdet;
