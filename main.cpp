@@ -46,12 +46,14 @@ int wmain()
 	// RigidBody test_box_2 = {};
 	// test_box_2.shape = test_shape_2;
 
-	RigidBody player_body = create_body(create_shape({100, 100}), {100, 350}, {}, 3);
+	set_gravity(V3(0, -98, 0));
+
+	RigidBody player_body = create_body(create_shape({100, 100}), {150, 800}, {}, 5);
 	player_body.color = V4(1, 1, 1, 1);
 	player_body.type = DebugType::PLAYER;
 	player_body.friction = 0.5f;
 	//player_body.freeze_orientation = true;
-	RigidBody box = create_body(create_shape({50, 50}), {200, 450}, {}, 1);
+	RigidBody box = create_body(create_shape({50, 50}), {500, 800}, {}, 1);
 	box.color = V4(1, 0, 0, 1);
 	RigidBody wall = create_body(create_shape({1000, 100}), {640, 200}, {}, 0);
 	wall.color = V4(0.5f, 0.5f, 0.5f, 1);
@@ -85,7 +87,8 @@ int wmain()
 			RigidBody b = create_body(create_shape({50, 50}), V3(get_mouse_position_flipped()), {}, 1);
 			b.color = V4(randf(0, 1.0f), randf(0, 1.0f), randf(0, 1.0f), 1); 
 			b.restitution = 0;
-			bodies.insert(bodies.begin(), b);
+			//bodies.insert(bodies.begin(), b);
+			bodies.push_back(b);
 		}
 
 		for(RigidBody& body : bodies)
@@ -147,13 +150,13 @@ int wmain()
         while(physics_time_accumlator >= physics_dt)
         {	
 			
-			for(Manifold& m : manifolds)
-			{
-				for(Contact& c : m.contacts)
-				{
-					update_contact(&m, &c);
-				}
-			}
+			// for(Manifold& m : manifolds)
+			// {
+			// 	for(Contact& c : m.contacts)
+			// 	{
+			// 		update_contact(&m, &c);
+			// 	}
+			// }
 
 			for(RigidBody& body : bodies)
 			{
