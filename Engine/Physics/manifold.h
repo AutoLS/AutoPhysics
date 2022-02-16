@@ -79,13 +79,22 @@ void solve_contact_constraint(Manifold* m, Contact* c)
 
     //Resolution
 #if 1
+/*  NOTE: 
+    JV + b = 0
+    C: (Pb - Pa) . n >= 0
+    C': (-va - wa x ra + vb + wb x rb) . n >= 0
+    where J = [-n r1xn n -r2xn]
+    lambda = -(JV + b) * EffectiveMass
+    EffectiveMass = (J*Minv*JT)
+*/
+
     Vector3 j1 = m->body_a->inverse_mass == 0 ? V3() : -c->normal;
     Vector3 j2 = m->body_a->inverse_mass == 0 ? V3() : cross(r1, c->normal);
     Vector3 j3 = m->body_b->inverse_mass == 0 ? V3() : c->normal;
     Vector3 j4 = m->body_b->inverse_mass == 0 ? V3() : -cross(r2, c->normal);
     
     float k = m->body_a->inverse_mass + dot(j2, m->body_a->inverse_inertia * j2) +
-              m->body_b->inverse_mass + dot(j4, m->body_a->inverse_inertia * j4);
+              m->body_b->inverse_mass + dot(j4, m->body_b->inverse_inertia * j4);
 
     if(k != 0)
     {
